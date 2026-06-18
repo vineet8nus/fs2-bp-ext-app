@@ -25,16 +25,9 @@ modules:
           srv-url: ${default-url}
     requires:
       - name: fs2-bp-ext-app-auth
-      - name: fs2-bp-ext-app-db
       - name: fs2-bp-ext-app-destination
+      - name: fs2-bp-ext-app-postgres
 
-  - name: fs2-bp-ext-app-db-deployer
-    type: hdb
-    path: gen/db
-    parameters:
-      buildpack: nodejs_buildpack
-    requires:
-      - name: fs2-bp-ext-app-db
   - name: fs2-bp-ext-app
     type: approuter.nodejs
     path: app/router
@@ -57,6 +50,19 @@ modules:
           app-protocol: ${protocol}
           app-uri: ${default-uri}
 
+  - name: fs2-bp-ext-app-postgres-deployer
+    type: nodejs
+    path: gen/pg
+    parameters:
+      buildpack: nodejs_buildpack
+      no-route: true
+      no-start: true
+      tasks:
+        - name: deploy-to-postgresql
+          command: npm start
+    requires:
+      - name: fs2-bp-ext-app-postgres
+
 resources:
   - name: fs2-bp-ext-app-auth
     type: org.cloudfoundry.managed-service
@@ -75,13 +81,13 @@ resources:
             - https://*~{app-api/app-uri}/**
     requires:
       - name: app-api
-  - name: fs2-bp-ext-app-db
-    type: com.sap.xs.hdi-container
-    parameters:
-      service: hana
-      service-plan: hdi-shared
   - name: fs2-bp-ext-app-destination
     type: org.cloudfoundry.managed-service
     parameters:
       service: destination
       service-plan: lite
+  - name: fs2-bp-ext-app-postgres
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: postgresql-db
+      service-plan: free

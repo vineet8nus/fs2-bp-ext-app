@@ -2,7 +2,7 @@
   "name": "fs2-bp-ext-app",
   "version": "1.0.0",
   "dependencies": {
-    "@cap-js/hana": "^2",
+    "@cap-js/postgres": "^2",
     "@sap/cds": "^9",
     "@sap/xssec": "^4"
   },
@@ -22,7 +22,7 @@
     "requires": {
       "[production]": {
         "auth": "xsuaa",
-        "db": "hana",
+        "db": "postgres",
         "destinations": true
       },
       "API_BUSINESS_PARTNER": {
@@ -32,7 +32,9 @@
           "credentials": {
             "destination": "SHD250SYSTEM",
             "path": "/sap/opu/odata/sap/API_BUSINESS_PARTNER",
-            "queries": { "sap-client": "250" }
+            "queries": {
+              "sap-client": "250"
+            }
           }
         }
       }
