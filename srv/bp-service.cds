@@ -1,10 +1,10 @@
-using { nus.bp as db } from '../db/schema';
+using { znus.bp as db } from '../db/schema';
 
 /**
  * BP Change & Extend governance service (OData V4, draft-enabled).
  * Replaces the freestyle "MDG-lite" app: List Report + Object Page over one draft BO.
  */
-service BpService @(path: '/bp', requires: 'authenticated-user') {
+service ZBpService @(path: '/bp', requires: 'authenticated-user') {
 
   @odata.draft.enabled
   entity ChangeRequests as projection on db.ChangeRequest actions {
@@ -35,7 +35,7 @@ service BpService @(path: '/bp', requires: 'authenticated-user') {
 }
 
 /** Admin/config service — separate so config maintenance is access-controlled. */
-service BpConfigService @(path: '/bp-config', requires: 'authenticated-user') {
+service ZBpConfigService @(path: '/bp-config', requires: 'authenticated-user') {
   entity FieldRules as projection on db.FieldRule;
   entity Configs    as projection on db.Config;
 }

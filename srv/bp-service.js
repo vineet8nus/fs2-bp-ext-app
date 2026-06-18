@@ -12,7 +12,7 @@ const s4 = require('./lib/s4-bp');
  * `req.subject` resolves to the concrete instance the request targets (draft or
  * active), so we never juggle composite draft keys by hand.
  */
-module.exports = class BpService extends cds.ApplicationService {
+module.exports = class ZBpService extends cds.ApplicationService {
   async init() {
     // `this.entities` is not populated at init time in this CAP setup, so all
     // handler targets are registered by name string (resolved at dispatch).

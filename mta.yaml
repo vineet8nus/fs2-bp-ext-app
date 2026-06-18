@@ -10,6 +10,8 @@ build-parameters:
       commands:
         - npm ci
         - npx cds build --production
+        # Ship the dedicated-schema bootstrap into the Postgres deployer image
+        - cp deploy/setup-schema.js gen/pg/setup-schema.js
 modules:
   - name: fs2-bp-ext-app-srv
     type: nodejs
@@ -17,6 +19,10 @@ modules:
     parameters:
       instances: 1
       buildpack: nodejs_buildpack
+    # Isolate all BP objects in a dedicated Postgres schema (no impact on the
+    # other apps sharing this instance, which live in `public`). The schema is
+    # baked into the CAP config (package.json cds.requires.db.credentials.schema)
+    # so every connection issues `SET search_path TO znus_bp`.
     build-parameters:
       builder: npm-ci
     provides:
@@ -59,7 +65,10 @@ modules:
       no-start: true
       tasks:
         - name: deploy-to-postgresql
-          command: npm start
+          # Create the dedicated schema, then deploy BP tables into it. The
+          # schema env is set inline so cds-deploy's introspection is scoped to
+          # znus_bp (never the shared `public` where other apps' tables live).
+          command: CDS_REQUIRES_DB_CREDENTIALS_SCHEMA=znus_bp node setup-schema.js && CDS_REQUIRES_DB_CREDENTIALS_SCHEMA=znus_bp npm start
     requires:
       - name: fs2-bp-ext-app-postgres
 
@@ -71,7 +80,7 @@ resources:
       service-plan: application
       path: ./xs-security.json
       config:
-        xsappname: fs2-bp-ext-app-${org}-${space}
+        xsappname: fs2-bp-ext-app-${space}
         tenant-mode: dedicated
         oauth2-configuration:
           credential-types:
@@ -86,8 +95,9 @@ resources:
     parameters:
       service: destination
       service-plan: lite
+  # Reuse the existing shared Postgres instance (free-plan quota is already used
+  # by it); the BP app stays isolated via the dedicated `znus_bp` schema.
   - name: fs2-bp-ext-app-postgres
-    type: org.cloudfoundry.managed-service
+    type: org.cloudfoundry.existing-service
     parameters:
-      service: postgresql-db
-      service-plan: free
+      service-name: zepcappg-postgres

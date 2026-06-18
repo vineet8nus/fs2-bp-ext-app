@@ -22,7 +22,12 @@
     "requires": {
       "[production]": {
         "auth": "xsuaa",
-        "db": "postgres",
+        "db": {
+          "kind": "postgres",
+          "credentials": {
+            "schema": "znus_bp"
+          }
+        },
         "destinations": true
       },
       "API_BUSINESS_PARTNER": {

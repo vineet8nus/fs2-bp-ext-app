@@ -46,7 +46,9 @@ no custom two-column diff. The snapshot is loaded by a determination
 
 - Node.js 22, `@sap/cds-dk` (`npm i -g @sap/cds-dk`)
 - Cloud Foundry CLI v8 + MultiApps plugin, and `mbt` (`npm i -g mbt`) for packaging
-- A BTP subaccount with **HANA Cloud**, **XSUAA**, and **Destination** entitlements
+- A BTP subaccount with **XSUAA** + **Destination**, and a database — either
+  **HANA Cloud** or **PostgreSQL** (this deployment reuses a shared Postgres
+  instance, isolated by schema — see below)
 - A destination named **`SHD250SYSTEM`** (configurable) reaching the S/4 BP API
   (Cloud Connector if S/4 is private). `sap-client 250`.
 
@@ -63,7 +65,7 @@ Open the Fiori preview that `cds watch` prints for service `bp`.
 ## Build & deploy to Cloud Foundry
 
 ```bash
-cds build --production              # → gen/  (HANA artifacts + srv build)
+cds build --production              # → gen/  (srv + Postgres deployer build)
 mbt build -t ./mta_archives \
   --mtar fs2-bp-ext-app.mtar        # → mta_archives/fs2-bp-ext-app.mtar
 
@@ -71,8 +73,30 @@ cf login -a https://api.cf.ap11.hana.ondemand.com --sso
 cf deploy mta_archives/fs2-bp-ext-app.mtar
 ```
 
-The MTA (`mta.yaml`) provisions: CAP srv module, HANA HDI db-deployer, managed
+The MTA (`mta.yaml`) provisions: CAP srv module, a Postgres deployer, managed
 approuter, XSUAA (`xs-security.json`), and a destination service instance.
+
+### Database — PostgreSQL on a shared instance, isolated by schema
+
+This subaccount has **no HANA Cloud entitlement**, and the free PostgreSQL
+quota is already consumed by a shared instance (`zepcappg-postgres`). So the app:
+
+- **reuses** that instance (`mta.yaml` → `org.cloudfoundry.existing-service`), and
+- lives entirely in its **own schema `znus_bp`** — every connection issues
+  `SET search_path TO znus_bp` (`package.json` → `cds.requires.db.credentials.schema`),
+  and `deploy/setup-schema.js` creates the schema (idempotently) before
+  `cds-deploy` runs.
+
+This isolates **all** objects — business tables (`znus_bp_*`), Fiori draft tables
+(`zbpservice_*_drafts`), and even CAP framework tables (`draft_draftadministrativedata`,
+`cds_outbox_messages`) — from the other apps living in `public`. Nothing is
+created in `public`, so there is **zero impact** on the co-tenant apps. The
+binding user (`dbo`) is shared across apps, so **no** role/database-level
+defaults are changed; scoping is strictly per-connection.
+
+To move to a dedicated database later, swap the `fs2-bp-ext-app-postgres`
+resource back to a `managed-service` (HANA `hdi-shared` or a new Postgres
+instance) and drop the schema bootstrap.
 
 ## S/4 connectivity — finish the wiring (Phase 0)
 
@@ -88,8 +112,8 @@ approuter, XSUAA (`xs-security.json`), and a destination service instance.
 
 | Phase | Scope | Status |
 |---|---|---|
-| 0 | Foundation, destination, BP consumption model | remote service wired; **EDMX import** + destination pending |
-| 1 | Core BO (model, draft, snapshot determination, LR/OP) | done (this commit) |
+| 0 | Foundation, destination, BP consumption model | **deployed to CF** (srv + approuter + Postgres/`znus_bp` + XSUAA + destination); `SHD250SYSTEM` exists; **EDMX import** still pending |
+| 1 | Core BO (model, draft, snapshot determination, LR/OP) | done |
 | 2 | Actions & rules (`extend`/`selectCompanyCode`/`check`/`submit`, validations) | baseline done; dynamic feature-control via `FieldRule` pending |
 | 3 | Workflow & standard services (Flexible Workflow / SBPA, attachments, app log) | `submit`/`approve`/`reject` stubbed; workflow trigger TODO |
 | 4 | Posting via released BP API, read-back, duplicate check | write path + status lifecycle done; duplicate fuzzy-check pending |
@@ -101,7 +125,7 @@ approuter, XSUAA (`xs-security.json`), and a destination service instance.
 - `srv/lib/s4-bp.js` deliberately **does not swallow** S/4 errors — failures set
   `Status = Failed` and surface the parsed message (design doc §7).
 - The "mandatory-by-context" matrix lives in the `FieldRule` config entity
-  (seed: `db/data/nus.bp-FieldRule.csv`), read by feature-control logic so policy
+  (seed: `db/data/znus.bp-FieldRule.csv`), read by feature-control logic so policy
   changes need no code change (design doc §5).
 - A local CLI quirk in some sandboxed environments can prevent `cds serve` from
   hot-loading edited handler files; use `cds watch` or `npm test` (cds.test)

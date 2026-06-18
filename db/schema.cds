@@ -1,4 +1,4 @@
-namespace nus.bp;
+namespace znus.bp;
 
 using { cuid, managed } from '@sap/cds/common';
 
