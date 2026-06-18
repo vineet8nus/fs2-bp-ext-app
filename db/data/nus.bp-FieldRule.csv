@@ -1,0 +1,7 @@
+ID;requestType;role;fieldName;mandatory;readOnly;hidden
+1;Change;;name1;true;false;false
+2;Change;;bpGrouping;true;false;false
+3;Extend;Vendor;reconAccount;true;false;false
+4;Extend;Vendor;paymentTerms;true;false;false
+5;Extend;Customer;reconAccount;true;false;false
+6;Extend;Customer;paymentTerms;true;false;false

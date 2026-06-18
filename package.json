@@ -1,0 +1,41 @@
+{
+  "name": "fs2-bp-ext-app",
+  "version": "1.0.0",
+  "dependencies": {
+    "@cap-js/hana": "^2",
+    "@sap/cds": "^9",
+    "@sap/xssec": "^4"
+  },
+  "devDependencies": {
+    "@cap-js/sqlite": "^2.4.0",
+    "@sap/cds-dk": "^9",
+    "axios": "^1.18.0",
+    "chai": "^4.5.0"
+  },
+  "scripts": {
+    "start": "cds-serve",
+    "build": "cds build --production",
+    "test": "mocha test/**/*.test.js --timeout 60000 --exit"
+  },
+  "private": true,
+  "cds": {
+    "requires": {
+      "[production]": {
+        "auth": "xsuaa",
+        "db": "hana",
+        "destinations": true
+      },
+      "API_BUSINESS_PARTNER": {
+        "kind": "odata-v2",
+        "model": "srv/external/API_BUSINESS_PARTNER",
+        "[production]": {
+          "credentials": {
+            "destination": "SHD250SYSTEM",
+            "path": "/sap/opu/odata/sap/API_BUSINESS_PARTNER",
+            "queries": { "sap-client": "250" }
+          }
+        }
+      }
+    }
+  }
+}
