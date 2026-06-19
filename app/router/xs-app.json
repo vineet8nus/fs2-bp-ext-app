@@ -3,6 +3,7 @@
   "routes": [
     {
       "source": "^/bp/webapp/(.*)$",
+      "target": "$1",
       "localDir": "bp/webapp",
       "authenticationType": "xsuaa"
     },
