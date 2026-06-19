@@ -12,6 +12,9 @@ build-parameters:
         - npx cds build --production
         # Ship the dedicated-schema bootstrap into the Postgres deployer image
         - cp deploy/setup-schema.js gen/pg/setup-schema.js
+        # Bundle the Fiori webapp into the approuter so it can be served via localDir
+        - mkdir -p app/router/bp
+        - cp -r app/bp/webapp app/router/bp/
 modules:
   - name: fs2-bp-ext-app-srv
     type: nodejs

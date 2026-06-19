@@ -7,6 +7,9 @@ gen/
 default-*.json
 *.sqlite
 
+# Webapp bundled into approuter by mbt before-all (generated, not source)
+app/router/bp/
+
 # MTA
 mta_archives/
 *_mta_build_tmp
