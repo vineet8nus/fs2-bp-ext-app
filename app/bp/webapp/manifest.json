@@ -75,7 +75,7 @@
           "options": {
             "settings": {
               "contextPath": "/ChangeRequests",
-              "variantManagement": "Page",
+              "variantManagement": "None",
               "initialLoad": true,
               "navigation": {
                 "ChangeRequests": {
